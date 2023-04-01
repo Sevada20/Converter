@@ -1,11 +1,12 @@
 import "./App.css";
 import { useEffect, useRef, useState } from "react";
 import { fakeDataApi } from "./data";
+import Button from "./components/Button";
+import OpenTable from "./components/OpenTable";
 
 const initialMeasurementTypes = ["Distance", "Temperature", "Money"];
 const initialDistanceTypes = ["Meter", "Kilometer"];
 const initialTableTemperature = ["Celsius", "Fahrenheit"];
-
 function App() {
   const buttonRef = useRef();
   const button1Ref = useRef();
@@ -70,7 +71,6 @@ function App() {
   };
 
   let onlineBuyArr = [] && money.map(({ online }) => online.buy);
-  console.log(onlineBuyArr);
   let [usd, eur, rub, gbp] = onlineBuyArr;
 
   useEffect(() => {
@@ -221,24 +221,17 @@ function App() {
       ) : (
         ""
       )}
-      <button ref={buttonRef} onClick={toggleOpenTableMeasurementTypes}>
-        <div className="measurementTypes">
-          {activeMeasurementType}
-          <div className="arrows">
-            <div>{"\u25B2"}</div>
-            <div>{"\u25BC"}</div>
-          </div>
-        </div>
-      </button>
-      {openTableMeasurementTypes && (
-        <ul className="measurementTypesTable">
-          {initialMeasurementTypes.map((type) => (
-            <li key={type} onClick={() => onSelectItemMeasurementType(type)}>
-              {type}
-            </li>
-          ))}
-        </ul>
-      )}
+      <Button
+        buttonRef={buttonRef}
+        onClick={toggleOpenTableMeasurementTypes}
+        activeType={activeMeasurementType}
+        className={"measurementTypes"}
+      />
+      <OpenTable
+        isTableOpen={openTableMeasurementTypes}
+        initialState={initialMeasurementTypes}
+        onSelect={onSelectItemMeasurementType}
+      />
       <div className="unitsContainer">
         <div className="unitLeft">
           <input
@@ -247,24 +240,16 @@ function App() {
             value={inputValue1}
             onChange={(e) => changeValueInput1(e.target.value)}
           />
-          <button ref={button1Ref} onClick={toggleOpenTable1}>
-            <span>
-              {activeType1}
-              <div className="arrows">
-                <div>{"\u25B2"}</div>
-                <div>{"\u25BC"}</div>
-              </div>
-            </span>
-          </button>
-          {openTable1 && (
-            <ul className="measurementTypesTable">
-              {tableDistance.map((type) => (
-                <li key={type} onClick={() => onSelectOpenTable1(type)}>
-                  {type}
-                </li>
-              ))}
-            </ul>
-          )}
+          <Button
+            buttonRef={button1Ref}
+            onClick={toggleOpenTable1}
+            activeType={activeType1}
+          />
+          <OpenTable
+            isTableOpen={openTable1}
+            initialState={tableDistance}
+            onSelect={onSelectOpenTable1}
+          />
         </div>
         <span>=</span>
         <div className="unitRight">
@@ -276,24 +261,16 @@ function App() {
               changeValueInput2(e.target.value);
             }}
           />
-          <button ref={button2Ref} onClick={toggleOpenTable2}>
-            <span>
-              {activeType2}
-              <div className="arrows">
-                <div>{"\u25B2"}</div>
-                <div>{"\u25BC"}</div>
-              </div>
-            </span>
-          </button>
-          {openTable2 && (
-            <ul className="measurementTypesTable">
-              {tableDistance.map((type) => (
-                <li key={type} onClick={() => onSelectOpenTable2(type)}>
-                  {type}
-                </li>
-              ))}
-            </ul>
-          )}
+          <Button
+            buttonRef={button2Ref}
+            onClick={toggleOpenTable2}
+            activeType={activeType2}
+          />
+          <OpenTable
+            isTableOpen={openTable2}
+            initialState={tableDistance}
+            onSelect={onSelectOpenTable2}
+          />
         </div>
       </div>
       <div>
