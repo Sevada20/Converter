@@ -1,0 +1,45 @@
+export const fakeDataApi = {
+  success: true,
+  items: [
+    {
+      code: "USD",
+      cash: { buy: 386, sell: 392 },
+      cashless: { buy: 385, sell: 391 },
+      online: { buy: 385.3, sell: 391 },
+      cb: { buy: 388.48, sell: 388.48 },
+      card: { buy: 385, sell: 391 },
+    },
+    {
+      code: "EUR",
+      cash: { buy: 415, sell: 429 },
+      cashless: { buy: 415, sell: 429 },
+      online: { buy: 415.98, sell: 429 },
+      cb: { buy: 422.28, sell: 422.28 },
+      card: { buy: 415, sell: 429 },
+    },
+    {
+      code: "RUB",
+      cash: { buy: 4.8, sell: 5.17 },
+      cashless: { buy: 4.8, sell: 5.17 },
+      online: { buy: 4.83, sell: 5.17 },
+      cb: { buy: 5.02, sell: 5.02 },
+      card: { buy: 4.8, sell: 5.17 },
+    },
+    {
+      code: "GBP",
+      cash: { buy: null, sell: null },
+      cashless: { buy: 473, sell: 489 },
+      online: { buy: 473, sell: 489 },
+      cb: { buy: 480.74, sell: 480.74 },
+      card: { buy: null, sell: null },
+    },
+    {
+      code: "XAU",
+      cash: { buy: null, sell: null },
+      cashless: { buy: null, sell: null },
+      online: { buy: null, sell: null },
+      cb: { buy: null, sell: null },
+      card: { buy: null, sell: null },
+    },
+  ],
+};

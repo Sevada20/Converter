@@ -1,18 +1,16 @@
 import "./App.css";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { fakeDataApi } from "./data";
 
 const initialMeasurementTypes = ["Distance", "Temperature", "Money"];
 const initialDistanceTypes = ["Meter", "Kilometer"];
 const initialTableTemperature = ["Celsius", "Fahrenheit"];
 
 function App() {
-  const [measurementTypes, setMeasurementTypes] = useState(
-    initialMeasurementTypes
-  );
+  const buttonRef = useRef();
+  const button1Ref = useRef();
+  const button2Ref = useRef();
   const [tableDistance, setTableDistance] = useState(initialDistanceTypes);
-  const [tableTemperature, setTableTemperature] = useState(
-    initialTableTemperature
-  );
   const [money, setMoney] = useState([]);
 
   const [openTableMeasurementTypes, setOpenTableMeasurementTypes] =
@@ -21,7 +19,7 @@ function App() {
   const [openTable2, setOpenTable2] = useState(false);
 
   const [activeMeasurementType, setActiveMeasurementType] = useState(
-    measurementTypes[0]
+    initialMeasurementTypes[0]
   );
   const [activeType1, setActiveType1] = useState(tableDistance[0]);
   const [activeType2, setActiveType2] = useState(tableDistance[0]);
@@ -29,6 +27,7 @@ function App() {
   const [inputValue1, setInputValue1] = useState("");
   const [inputValue2, setInputValue2] = useState("");
   const [formula, setFormula] = useState("");
+  const [loaded, setLoaded] = useState(true);
 
   const toggleOpenTableMeasurementTypes = () => {
     setOpenTableMeasurementTypes(
@@ -49,10 +48,18 @@ function App() {
   const onSelectOpenTable1 = (name) => {
     setActiveType1(name);
     setOpenTable1(false);
+    if (name === "Meter") setActiveType2("Kilometer");
+    else if (name === "Kilometer") setActiveType2("Meter");
+    else if (name === "Celsius") setActiveType2("Fahrenheit");
+    else if (name === "Fahrenheit") setActiveType2("Celsius");
   };
   const onSelectOpenTable2 = (name) => {
     setActiveType2(name);
     setOpenTable2(false);
+    if (name === "Meter") setActiveType1("Kilometer");
+    else if (name === "Kilometer") setActiveType1("Meter");
+    else if (name === "Celsius") setActiveType1("Fahrenheit");
+    else if (name === "Fahrenheit") setActiveType1("Celsius");
   };
 
   const changeValueInput1 = (value) => {
@@ -62,6 +69,28 @@ function App() {
     setInputValue2(value);
   };
 
+  let onlineBuyArr = [] && money.map(({ online }) => online.buy);
+  console.log(onlineBuyArr);
+  let [usd, eur, rub, gbp] = onlineBuyArr;
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (!buttonRef.current.contains(event.target)) {
+        setOpenTableMeasurementTypes(false);
+      }
+      if (!button1Ref.current.contains(event.target)) {
+        setOpenTable1(false);
+      }
+      if (!button2Ref.current.contains(event.target)) {
+        setOpenTable2(false);
+      }
+    }
+    document.addEventListener("click", handleClickOutside);
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, [buttonRef]);
+
   useEffect(() => {
     if (activeMeasurementType === "Temperature") {
       setActiveType1(initialTableTemperature[0]);
@@ -70,6 +99,7 @@ function App() {
       setFormula("");
       setInputValue1("");
       setInputValue2("");
+      setLoaded(true);
     } else if (activeMeasurementType === "Distance") {
       setTableDistance(initialDistanceTypes);
       setActiveType1(initialDistanceTypes[0]);
@@ -77,20 +107,43 @@ function App() {
       setFormula("");
       setInputValue1("");
       setInputValue2("");
+      setLoaded(true);
+    } else {
+      setInputValue1("");
+      setInputValue2("");
+      const proxyUrl = "https://cors-anywhere.herokuapp.com/";
+      const targetUrl = "https://www.inecobank.am/api/rates";
+      fetch(proxyUrl + targetUrl).then((response) =>
+        response
+          .json()
+          .then((data) => {
+            setMoney(data.items);
+            setTableDistance(data.items.map((item) => item.code));
+            setActiveType1(data.items[0].code);
+            setActiveType2(data.items[1].code);
+          })
+          .catch((error) => {
+            console.log(error);
+            setMoney(fakeDataApi.items);
+            setTableDistance(fakeDataApi.items.map((item) => item.code));
+            setActiveType1(fakeDataApi.items[0].code);
+            setActiveType2(fakeDataApi.items[1].code);
+          })
+          .finally(() => {
+            setFormula("");
+            setLoaded(false);
+          })
+      );
     }
   }, [activeMeasurementType]);
-
   useEffect(() => {
-    if (activeType1 === activeType2) {
-      setInputValue2(inputValue1);
-    } else if (activeType1 === "Kilometer" && activeType2 === "Meter") {
+    if (activeType1 === activeType2) setInputValue2(inputValue1);
+    else if (activeType1 === "Kilometer" && activeType2 === "Meter") {
       setInputValue2(inputValue1 * 1000);
       setFormula('Multiply the "Length" value by 1000');
     } else if (activeType1 === "Meter" && activeType2 === "Kilometer") {
       setInputValue2(inputValue1 / 1000);
       setFormula('Divide the "Length" value by 1000');
-    } else if (activeType1 === activeType2) {
-      setInputValue2(inputValue1);
     } else if (activeType1 === "Celsius" && activeType2 === "Fahrenheit") {
       let newValue = inputValue1 && (inputValue1 * (9 / 5) + 32).toFixed(4);
       setInputValue2(newValue);
@@ -99,12 +152,76 @@ function App() {
       let newValue = inputValue1 && ((inputValue1 - 32) * (5 / 9)).toFixed(4);
       setInputValue2(newValue);
       setFormula(`(${inputValue2} °F − 32) × 5/9 = ${newValue} °C`);
+    } else if (activeType1 === "USD" && activeType2 === "EUR") {
+      let newValue = ((inputValue1 * usd) / eur).toFixed(4);
+      setInputValue2(newValue);
+      setFormula(`${inputValue1} USD * ${usd}$ / ${eur}(€) = ${newValue} (€)`);
+    } else if (activeType1 === "EUR" && activeType2 === "USD") {
+      let newValue = ((inputValue1 * eur) / usd).toFixed(4);
+      setInputValue2(newValue);
+      setFormula(`${inputValue1} EUR * ${eur}(€) / ${usd}$ = ${newValue} $`);
+    } else if (activeType1 === "USD" && activeType2 === "RUB") {
+      let newValue = ((inputValue1 * usd) / rub).toFixed(4);
+      setInputValue2(newValue);
+      setFormula(`${inputValue1} USD * ${usd}$ / ${rub}(₽) = ${newValue} (₽)`);
+    } else if (activeType1 === "RUB" && activeType2 === "USD") {
+      let newValue = ((inputValue1 * rub) / usd).toFixed(4);
+      setInputValue2(newValue);
+      setFormula(`${inputValue1} RUB * ${rub}(₽) / ${usd}$ = ${newValue} $`);
+    } else if (activeType1 === "USD" && activeType2 === "GBP") {
+      let newValue = ((inputValue1 * usd) / gbp).toFixed(4);
+      setInputValue2(newValue);
+      setFormula(`${inputValue1} USD * ${usd}$ / ${gbp}(£) = ${newValue} $`);
+    } else if (activeType1 === "GBP" && activeType2 === "USD") {
+      let newValue = ((inputValue1 * gbp) / usd).toFixed(4);
+      setInputValue2(newValue);
+      setFormula(`${inputValue1} GBP * ${gbp}(£) / ${usd}$ = ${newValue} (£)`);
+    } else if (activeType1 === "EUR" && activeType2 === "RUB") {
+      let newValue = ((inputValue1 * eur) / rub).toFixed(4);
+      setInputValue2(newValue);
+      setFormula(`${inputValue1} EUR * ${eur}(£) / ${rub}$ = ${newValue} (€)`);
+    } else if (activeType1 === "RUB" && activeType2 === "EUR") {
+      let newValue = ((inputValue1 * rub) / eur).toFixed(4);
+      setInputValue2(newValue);
+      setFormula(
+        `${inputValue1} RUB * ${rub}(₽) / ${eur}(€) = ${newValue} (₽)`
+      );
+    } else if (activeType1 === "EUR" && activeType2 === "GBP") {
+      let newValue = ((inputValue1 * eur) / gbp).toFixed(4);
+      setInputValue2(newValue);
+      setFormula(
+        `${inputValue1} EUR * ${eur}(€) / ${gbp}(£) = ${newValue} (€)`
+      );
+    } else if (activeType1 === "GBP" && activeType2 === "EUR") {
+      let newValue = ((inputValue1 * gbp) / eur).toFixed(4);
+      setInputValue2(newValue);
+      setFormula(
+        `${inputValue1} GBP * ${gbp}(£) / ${eur}(€) = ${newValue} (£)`
+      );
+    } else if (activeType1 === "RUB" && activeType2 === "GBP") {
+      let newValue = ((inputValue1 * rub) / gbp).toFixed(4);
+      setInputValue2(newValue);
+      setFormula(
+        `${inputValue1} RUB * ${rub}(₽) / ${gbp}(£) = ${newValue} (₽)`
+      );
+    } else if (activeType1 === "GBP" && activeType2 === "RUB") {
+      let newValue = ((inputValue1 * gbp) / rub).toFixed(4);
+      setInputValue2(newValue);
+      setFormula(
+        `${inputValue1} GBP * ${gbp}(£) / ${rub}(₽) = ${newValue} (£)`
+      );
     }
   }, [inputValue1, inputValue2, activeType1, activeType2]);
 
   return (
     <div className="App">
-      <button onClick={toggleOpenTableMeasurementTypes}>
+      {activeMeasurementType === "Money" && loaded ? <h4>...Loading</h4> : ""}
+      {activeMeasurementType === "Money" && !loaded ? (
+        <h4>This data is not up-to-date</h4>
+      ) : (
+        ""
+      )}
+      <button ref={buttonRef} onClick={toggleOpenTableMeasurementTypes}>
         <div className="measurementTypes">
           {activeMeasurementType}
           <div className="arrows">
@@ -115,7 +232,7 @@ function App() {
       </button>
       {openTableMeasurementTypes && (
         <ul className="measurementTypesTable">
-          {measurementTypes.map((type) => (
+          {initialMeasurementTypes.map((type) => (
             <li key={type} onClick={() => onSelectItemMeasurementType(type)}>
               {type}
             </li>
@@ -130,7 +247,7 @@ function App() {
             value={inputValue1}
             onChange={(e) => changeValueInput1(e.target.value)}
           />
-          <button onClick={toggleOpenTable1}>
+          <button ref={button1Ref} onClick={toggleOpenTable1}>
             <span>
               {activeType1}
               <div className="arrows">
@@ -159,7 +276,7 @@ function App() {
               changeValueInput2(e.target.value);
             }}
           />
-          <button onClick={toggleOpenTable2}>
+          <button ref={button2Ref} onClick={toggleOpenTable2}>
             <span>
               {activeType2}
               <div className="arrows">
@@ -182,10 +299,7 @@ function App() {
       <div>
         <div className="formula">
           <span>Formula</span>
-          <span>
-            {formula}
-            {/* for an approximate result, mulityply the length value by 3,281 */}
-          </span>
+          <span>{formula}</span>
         </div>
       </div>
     </div>
